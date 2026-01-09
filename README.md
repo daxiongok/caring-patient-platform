@@ -1,5 +1,7 @@
 # 卡柠慢病管理平台 (Caring Patient Platform)
 
+[English](./README_EN.md) | [中文](./README.md)
+
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Node](https://img.shields.io/badge/node-%3E%3D16.0.0-green.svg)
 ![Vue](https://img.shields.io/badge/vue-2.6%20%7C%203.5-brightgreen.svg)
