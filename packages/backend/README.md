@@ -77,12 +77,26 @@ backend/
 
 ### 环境要求
 
-- Java 1.8+
+- **Java 1.8** (⚠️ 必须使用 JDK 1.8 进行编译，其他版本可能导致编译失败)
 - Maven 3.6+
 - MySQL 8.0+
 - Redis 6.0+
 
 ### 安装依赖
+
+⚠️ **重要**: 首次编译时，必须**优先编译** `caring-public/caring-common` 公共模块，然后再编译整体项目。
+
+```bash
+# 1. 优先编译公共模块（必须先执行）
+cd packages/backend/caring-public/caring-common
+mvn clean install -DskipTests
+
+# 2. 返回项目根目录安装整体依赖
+cd /Users/leizhi/文稿/00-卡柠/卡柠开源代码库/caring-patient-platform
+npm run backend:install
+```
+
+或者使用 npm 脚本（已包含上述步骤）：
 
 ```bash
 # 在项目根目录执行
@@ -344,6 +358,45 @@ curl http://localhost:8080/caring-standalone/actuator/health
 ### 4. 依赖下载失败
 
 配置Maven镜像源。
+
+**Maven 仓库配置**:
+
+在 `~/.m2/settings.xml` 中配置以下仓库：
+
+```xml
+<mirrors>
+  <!-- 内部 Nexus 仓库 -->
+  <mirror>
+    <id>nexus</id>
+    <mirrorOf>*</mirrorOf>
+    <name>Caring Nexus Repository</name>
+    <url>https://nexus.caringsaas.cn/repository/maven-snapshots/</url>
+  </mirror>
+  
+  <!-- 阿里云镜像 -->
+  <mirror>
+    <id>aliyun</id>
+    <mirrorOf>central</mirrorOf>
+    <name>Aliyun Maven</name>
+    <url>https://maven.aliyun.com/repository/public</url>
+  </mirror>
+</mirrors>
+
+<repositories>
+  <repository>
+    <id>nexus</id>
+    <url>https://nexus.caringsaas.cn/repository/maven-snapshots/</url>
+    <releases>
+      <enabled>true</enabled>
+    </releases>
+    <snapshots>
+      <enabled>true</enabled>
+    </snapshots>
+  </repository>
+</repositories>
+```
+
+**注意**: 如果遇到 HTTP 仓库访问被阻止的错误，请确保使用 HTTPS 协议。
 
 ## 前后端联调
 
