@@ -119,14 +119,126 @@ npm run dev --scope=@caring/patient-app
 ```
 
 **后端开发**:
-```bash
-# 启动后端服务
-npm run backend:run
 
-# 或使用Maven启动
+详细的开发文档请参考 [packages/backend/README.md](./packages/backend/README.md)
+
+**环境要求**:
+- Java 1.8 (⚠️ 必须使用 JDK 1.8 进行编译)
+- Maven 3.6+
+- MySQL 8.0+
+- Redis 6.0+
+- Docker & Docker Compose (用于启动依赖服务)
+
+**快速启动后端**:
+
+#### 第一步：启动依赖服务（Docker Compose）
+
+```bash
 cd packages/backend
-mvn spring-boot:run
+docker-compose up -d
 ```
+
+此命令会启动 MySQL、Nacos、Redis、XXL-Job、Nginx 等依赖服务，并自动执行数据库初始化脚本。
+
+**首次启动需要等待 1-2 分钟，等待所有服务完全启动。**
+
+依赖环境启动后，可以访问以下服务：
+- **Nacos 控制台**: http://localhost:8848/nacos (用户名/密码: nacos/nacos)
+- **MySQL**: localhost:3306 (用户名: root, 密码: change-this-password)
+- **Redis**: localhost:6379 (密码: change-this-password)
+- **XXL-Job**: http://localhost:8080/xxl-job-admin (用户名: admin, 密码: 123456)
+
+#### 第二步：验证 Nacos 配置初始化
+
+1. 访问 Nacos 控制台：http://localhost:8848/nacos
+2. 登录（用户名/密码: nacos/nacos）
+3. 进入"配置管理" -> "配置列表"
+4. 在命名空间下拉框中找到并选择 `dev` 命名空间
+5. 确认分组为 `sass-cloud`
+6. 应该能看到配置文件（common.yml、mysql.yml、redis.yml 等）
+
+#### 第三步：获取 Nacos 命名空间 UUID
+
+⚠️ **重要**：启动后端服务前，必须确保 `config-dev.properties` 中的 `nacos.namespace` 与 Nacos 中的 `dev` 命名空间 UUID 一致。
+
+**获取命名空间 UUID**：
+
+**方法一：通过 Nacos 控制台**
+1. 进入"命名空间"菜单
+2. 找到名为 `dev` 的命名空间
+3. 复制其命名空间 ID（UUID 格式）
+
+**方法二：通过数据库查询**
+```bash
+docker exec -i caring-mysql mysql -uroot -pchange-this-password nacos_config -e "SELECT tenant_id FROM tenant_info WHERE tenant_name = 'dev';"
+```
+
+#### 第四步：配置 Nacos 命名空间
+
+将获取到的命名空间 UUID 更新到 `src/main/filters/config-dev.properties` 文件中：
+
+```properties
+nacos.namespace=85d56e61-f676-11f0-a8b0-328ff568776d
+nacos.group=sass-cloud
+```
+
+#### 第五步：安装依赖
+
+⚠️ **重要**: 首次编译时，必须**优先编译** `caring-public/caring-common` 公共模块。
+
+```bash
+# 在项目根目录执行
+cd caring-patient-platform
+npm run backend:install
+```
+
+#### 第六步：启动后端服务
+
+**方式一：使用启动脚本（推荐）**
+```bash
+cd packages/backend
+./scripts/start-services.sh
+```
+
+**方式二：IDE 启动**
+在 IDE（如 IntelliJ IDEA）中按顺序启动服务：
+- caring-gateway（网关服务）- 端口 8760
+- caring-authority（权限服务）- 端口 8764
+- caring-tenant（租户服务）
+- caring-ucenter（用户中心）
+- 其他业务服务
+
+**方式三：命令行启动**
+```bash
+cd packages/backend
+mvn clean package -DskipTests
+java -jar caring-gateway/caring-gateway-server/target/caring-gateway-server.jar
+java -jar caring-authority/caring-authority-server/target/caring-authority-server.jar
+# ... 其他服务
+```
+
+#### 第七步：验证服务启动
+
+启动成功后，可以通过以下方式验证：
+
+1. **检查 Nacos 服务注册**
+   - 访问 Nacos 控制台：http://localhost:8848/nacos
+   - 进入"服务管理" -> "服务列表"
+   - 在 `dev` 命名空间下应该能看到已启动的服务
+
+2. **访问网关**
+   ```bash
+   curl http://localhost:8760/api/
+   ```
+
+3. **访问 API 文档**
+   - 网关 API 文档: http://localhost:8760/api/doc.html
+   - 权限服务: http://localhost:8764/doc.html
+
+**后端API文档**:
+- 网关服务: http://localhost:8760/api/doc.html
+- 权限服务: http://localhost:8764/doc.html
+- 文件服务: http://localhost:8765/doc.html
 
 ### 快速启动（Docker）
 
@@ -444,7 +556,7 @@ npm run test --scope=@caring/patient-app
 - 项目主页: [GitHub Repository](https://github.com/xinzhics/caring-patient-platform)
 - 问题反馈: [Issues](https://github.com/xinzhics/caring-patient-platform/issues)
 - 邮箱: allercura_ai@caringcloud.cn
-- 微信群：![微信群](docs/IMG_7686.JPG)
+- 微信群：![微信群](docs/IMG_7686-2.JPG)
 
 ## 🔧 后端服务
 
@@ -474,19 +586,123 @@ npm run test --scope=@caring/patient-app
 
 详细的开发文档请参考 [packages/backend/README.md](./packages/backend/README.md)
 
-**快速启动后端**:
-```bash
-# 使用Maven启动
-cd packages/backend
-mvn spring-boot:run
+**环境要求**:
+- Java 1.8 (⚠️ 必须使用 JDK 1.8 进行编译)
+- Maven 3.6+
+- MySQL 8.0+
+- Redis 6.0+
+- Docker & Docker Compose (用于启动依赖服务)
 
-# 或使用npm脚本
-npm run backend:run
+**快速启动后端**:
+
+#### 第一步：启动依赖服务（Docker Compose）
+
+```bash
+cd packages/backend
+docker-compose up -d
 ```
 
+此命令会启动 MySQL、Nacos、Redis、XXL-Job、Nginx 等依赖服务，并自动执行数据库初始化脚本。
+
+**首次启动需要等待 1-2 分钟，等待所有服务完全启动。**
+
+依赖环境启动后，可以访问以下服务：
+- **Nacos 控制台**: http://localhost:8848/nacos (用户名/密码: nacos/nacos)
+- **MySQL**: localhost:3306 (用户名: root, 密码: change-this-password)
+- **Redis**: localhost:6379 (密码: change-this-password)
+- **XXL-Job**: http://localhost:8080/xxl-job-admin (用户名: admin, 密码: 123456)
+
+#### 第二步：验证 Nacos 配置初始化
+
+1. 访问 Nacos 控制台：http://localhost:8848/nacos
+2. 登录（用户名/密码: nacos/nacos）
+3. 进入"配置管理" -> "配置列表"
+4. 在命名空间下拉框中找到并选择 `dev` 命名空间
+5. 确认分组为 `sass-cloud`
+6. 应该能看到配置文件（common.yml、mysql.yml、redis.yml 等）
+
+#### 第三步：获取 Nacos 命名空间 UUID
+
+⚠️ **重要**：启动后端服务前，必须确保 `config-dev.properties` 中的 `nacos.namespace` 与 Nacos 中的 `dev` 命名空间 UUID 一致。
+
+**获取命名空间 UUID**：
+
+**方法一：通过 Nacos 控制台**
+1. 进入"命名空间"菜单
+2. 找到名为 `dev` 的命名空间
+3. 复制其命名空间 ID（UUID 格式）
+
+**方法二：通过数据库查询**
+```bash
+docker exec -i caring-mysql mysql -uroot -pchange-this-password nacos_config -e "SELECT tenant_id FROM tenant_info WHERE tenant_name = 'dev';"
+```
+
+#### 第四步：配置 Nacos 命名空间
+
+将获取到的命名空间 UUID 更新到 `src/main/filters/config-dev.properties` 文件中：
+
+```properties
+nacos.namespace=85d56e61-f676-11f0-a8b0-328ff568776d
+nacos.group=sass-cloud
+```
+
+#### 第五步：安装依赖
+
+⚠️ **重要**: 首次编译时，必须**优先编译** `caring-public/caring-common` 公共模块。
+
+```bash
+# 在项目根目录执行
+cd caring-patient-platform
+npm run backend:install
+```
+
+#### 第六步：启动后端服务
+
+**方式一：使用启动脚本（推荐）**
+```bash
+cd packages/backend
+./scripts/start-services.sh
+```
+
+**方式二：IDE 启动**
+在 IDE（如 IntelliJ IDEA）中按顺序启动服务：
+- caring-gateway（网关服务）- 端口 8760
+- caring-authority（权限服务）- 端口 8764
+- caring-tenant（租户服务）
+- caring-ucenter（用户中心）
+- 其他业务服务
+
+**方式三：命令行启动**
+```bash
+cd packages/backend
+mvn clean package -DskipTests
+java -jar caring-gateway/caring-gateway-server/target/caring-gateway-server.jar
+java -jar caring-authority/caring-authority-server/target/caring-authority-server.jar
+# ... 其他服务
+```
+
+#### 第七步：验证服务启动
+
+启动成功后，可以通过以下方式验证：
+
+1. **检查 Nacos 服务注册**
+   - 访问 Nacos 控制台：http://localhost:8848/nacos
+   - 进入"服务管理" -> "服务列表"
+   - 在 `dev` 命名空间下应该能看到已启动的服务
+
+2. **访问网关**
+   ```bash
+   curl http://localhost:8760/api/actuator/health
+   ```
+
+3. **访问 API 文档**
+   - 网关 API 文档: http://localhost:8760/api/doc.html
+   - 权限服务: http://localhost:8764/doc.html
+
 **后端API文档**:
-- Swagger: http://localhost:8080/caring-standalone/swagger-ui.html
-- Druid监控: http://localhost:8080/caring-standalone/druid
+- 网关服务: http://localhost:8760/api/doc.html
+- 权限服务: http://localhost:8764/doc.html
+- 文件服务: http://localhost:8765/doc.html
 
 ### 前后端协作
 
